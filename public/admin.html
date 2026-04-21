@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم قايض - Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060c18; --bg2: #0a1628; --bg3: #0e1f3a;
+      --card: rgba(14,25,45,0.85); --card-hover: rgba(18,32,56,0.95);
+      --primary: #00d4aa; --primary-dim: rgba(0,212,170,0.12);
+      --accent: #00b8d4; --gradient: linear-gradient(135deg, #00d4aa, #00b8d4);
+      --text: #f0f4f8; --text2: #8fa3bf; --text3: #5a7190;
+      --border: rgba(0,212,170,0.12); --border2: rgba(255,255,255,0.06);
+      --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
+      --r: 14px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Layout */
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 260px; background: var(--bg2); border-left: 1px solid var(--border2);
+      padding: 24px 16px; position: fixed; top: 0; right: 0; height: 100vh;
+      overflow-y: auto; z-index: 100; transition: transform 0.3s;
+    }
+    .main { flex: 1; margin-right: 260px; padding: 24px 28px 40px; min-height: 100vh; }
+
+    /* Sidebar */
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 0 8px; }
+    .logo-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #060c18; font-weight: 900; }
+    .logo h1 { font-size: 1.3rem; font-weight: 900; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo span { font-size: 0.7rem; color: var(--text3); display: block; -webkit-text-fill-color: var(--text3); }
+
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 0.7rem; color: var(--text3); font-weight: 700; padding: 0 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+      color: var(--text2); cursor: pointer; transition: all 0.2s; font-size: 0.88rem; font-weight: 600;
+      margin-bottom: 2px; border: none; background: none; width: 100%; font-family: 'Cairo'; text-align: right;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active { background: var(--primary-dim); color: var(--primary); }
+    .nav-item .icon { font-size: 1.15rem; width: 28px; text-align: center; }
+    .nav-item .badge { margin-right: auto; background: var(--primary); color: #060c18; padding: 1px 8px; border-radius: 999px; font-size: 0.65rem; font-weight: 800; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header h2 { font-size: 1.5rem; font-weight: 900; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-btn { padding: 8px 18px; border-radius: 10px; border: 1px solid var(--border2); background: var(--card); color: var(--text); font-family: 'Cairo'; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+    .header-btn:hover { border-color: var(--border); background: var(--card-hover); }
+    .header-btn.primary { background: var(--gradient); color: #060c18; border: none; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border2); border-radius: var(--r);
+      padding: 20px; transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .stat-card:hover { border-color: var(--border); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .stat-card .icon { font-size: 2rem; margin-bottom: 8px; }
+    .stat-card .value { font-size: 2rem; font-weight: 900; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-card .label { font-size: 0.82rem; color: var(--text2); font-weight: 600; }
+    .stat-card .change { font-size: 0.72rem; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; }
+    .stat-card .change.up { background: rgba(81,207,102,0.1); color: var(--success); }
+    .stat-card .change.down { background: rgba(255,107,107,0.1); color: var(--danger); }
+    .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient); opacity: 0; transition: opacity 0.3s; }
+    .stat-card:hover::after { opacity: 1; }
+
+    /* Table */
+    .card {
+      background: var(--card); border: 1px solid var(--border2); border-radius: var(--r);
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; border-bottom: 1px solid var(--border2);
+    }
+    .card-header h3 { font-size: 1.05rem; font-weight: 800; }
+    .card-header .actions { display: flex; gap: 8px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text3); font-weight: 700; border-bottom: 1px solid var(--border2); background: rgba(0,0,0,0.15); }
+    td { padding: 12px 16px; font-size: 0.85rem; border-bottom: 1px solid var(--border2); vertical-align: middle; }
+    tr:hover td { background: rgba(0,212,170,0.02); }
+    tr:last-child td { border-bottom: none; }
+
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--gradient); display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: #060c18; font-size: 0.8rem; }
+    .badge-status { padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+    .badge-active { background: rgba(81,207,102,0.12); color: var(--success); border: 1px solid rgba(81,207,102,0.2); }
+    .badge-pending { background: rgba(255,212,59,0.12); color: var(--warning); border: 1px solid rgba(255,212,59,0.2); }
+    .badge-blocked { background: rgba(255,107,107,0.12); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+
+    .action-btn { padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; font-family: 'Cairo'; font-size: 0.72rem; font-weight: 600; transition: all 0.2s; }
+    .action-btn:hover { border-color: var(--border); color: var(--text); }
+    .action-btn.danger { border-color: rgba(255,107,107,0.2); color: var(--danger); }
+    .action-btn.danger:hover { background: rgba(255,107,107,0.1); }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .chart-bar { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding: 0 8px; }
+    .chart-col { flex: 1; background: var(--gradient); border-radius: 6px 6px 0 0; position: relative; transition: all 0.3s; min-width: 20px; cursor: pointer; opacity: 0.7; }
+    .chart-col:hover { opacity: 1; }
+    .chart-col .tip { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: var(--primary); font-weight: 800; white-space: nowrap; }
+    .chart-col .lbl { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--text3); white-space: nowrap; }
+    .donut { width: 140px; height: 140px; border-radius: 50%; position: relative; margin: 10px auto; }
+    .donut-center { position: absolute; inset: 30px; border-radius: 50%; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .donut-center .val { font-size: 1.5rem; font-weight: 900; color: var(--primary); }
+    .donut-center .lbl { font-size: 0.65rem; color: var(--text3); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 28px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease; }
+    .modal h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 14px; }
+    .modal label { font-size: 0.82rem; color: var(--text2); font-weight: 600; display: block; margin-bottom: 5px; }
+    .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; color: var(--text); font-family: 'Cairo'; font-size: 0.88rem; outline: none; }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--primary); }
+    .modal textarea { min-height: 80px; resize: vertical; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions button { flex: 1; }
+
+    /* Search */
+    .search-input { padding: 9px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; color: var(--text); font-family: 'Cairo'; font-size: 0.82rem; outline: none; min-width: 220px; }
+    .search-input:focus { border-color: var(--primary); }
+
+    /* Responsive */
+    @media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .sidebar { transform: translateX(100%); } .sidebar.open { transform: translateX(0); } .main { margin-right: 0; } .stats { grid-template-columns: 1fr 1fr; } }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .loading { display: flex; align-items: center; justify-content: center; padding: 60px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 0; background: var(--bg3); padding: 4px; border-radius: 12px; }
+    .tab { padding: 7px 16px; border-radius: 8px; border: none; background: none; color: var(--text3); font-family: 'Cairo'; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+    .tab.active { background: var(--primary-dim); color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <div class="logo-icon">🔄</div>
+        <div><h1>قايض</h1><span>لوحة التحكم</span></div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">رئيسي</div>
+        <button class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> الرئيسية</button>
+        <button class="nav-item" onclick="showPage('users')"><span class="icon">👥</span> المستخدمون <span class="badge" id="users-count">0</span></button>
+        <button class="nav-item" onclick="showPage('items')"><span class="icon">📦</span> المنتجات <span class="badge" id="items-count">0</span></button>
+        <button class="nav-item" onclick="showPage('trades')"><span class="icon">🤝</span> المقايضات <span class="badge" id="trades-count">0</span></button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">إدارة</div>
+        <button class="nav-item" onclick="showPage('categories')"><span class="icon">📁</span> التصنيفات</button>
+        <button class="nav-item" onclick="showPage('reports')"><span class="icon">📈</span> التقارير</button>
+        <button class="nav-item" onclick="showPage('notifications')"><span class="icon">🔔</span> الإشعارات</button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">النظام</div>
+        <button class="nav-item" onclick="showPage('settings')"><span class="icon">⚙️</span> الإعدادات</button>
+        <button class="nav-item" onclick="showPage('logs')"><span class="icon">📋</span> السجلات</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main" id="main-content">
+      <div class="loading"><div class="spinner"></div></div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" id="modal-content"></div>
+  </div>
+
+<script src="admin.js?v=2"></script>
+</body>
+</html>
