@@ -73,12 +73,15 @@ function renderUsers() {
   var rows = DATA.users.map(function(u, i) {
     var n = u.name || 'مجهول';
     var c = u.city || 'غير محدد';
-    return '<tr><td>' + (i+1) + '</td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">' + n[0] + '</div><strong>' + n + '</strong></div></td><td>📍 ' + c + '</td><td>⭐ ' + (u.trust_score||5) + '</td><td>' + (u.items_count||0) + '</td><td><span class="badge-status badge-active">نشط</span></td><td><button class="action-btn" onclick="viewUser(\'' + u.id + '\')">👁 عرض</button> <button class="action-btn danger" onclick="deleteUser(\'' + u.id + '\')">🚫 حظر</button></td></tr>';
+    var phone = u.phone || '---';
+    var email = u.email || '---';
+    var date = u.created_at ? u.created_at.split(' ')[0] : '---';
+    return '<tr><td>' + (i+1) + '</td><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">' + n[0] + '</div><strong>' + n + '</strong></div></td><td style="direction:ltr;text-align:center">📱 ' + phone + '</td><td style="font-size:0.75rem">' + email + '</td><td>📍 ' + c + '</td><td>' + (u.items_count||0) + '</td><td style="font-size:0.75rem;color:var(--text3)">' + date + '</td><td><span class="badge-status badge-active">نشط</span></td><td><button class="action-btn" onclick="viewUser(\'' + u.id + '\')">👁 عرض</button> <button class="action-btn danger" onclick="deleteUser(\'' + u.id + '\')">🚫 حظر</button></td></tr>';
   }).join('');
   document.getElementById('main-content').innerHTML =
     '<div class="header"><h2>👥 إدارة المستخدمين</h2><div class="header-right"><input class="search-input" placeholder="🔍 البحث عن مستخدم..." oninput="filterUsers(this.value)"></div></div>' +
     '<div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat-card"><div class="icon">👥</div><div class="value">' + DATA.users.length + '</div><div class="label">إجمالي المستخدمين</div></div><div class="stat-card"><div class="icon">✅</div><div class="value">' + DATA.users.length + '</div><div class="label">حسابات موثّقة</div></div><div class="stat-card"><div class="icon">📦</div><div class="value">' + DATA.items.length + '</div><div class="label">إجمالي المنتجات</div></div></div>' +
-    '<div class="card"><div class="card-header"><h3>قائمة المستخدمين</h3></div><table id="users-table"><tr><th>#</th><th>المستخدم</th><th>المدينة</th><th>التقييم</th><th>المنتجات</th><th>الحالة</th><th>إجراءات</th></tr>' + rows + '</table></div>';
+    '<div class="card"><div class="card-header"><h3>قائمة المستخدمين</h3></div><table id="users-table"><tr><th>#</th><th>المستخدم</th><th>الجوال</th><th>الإيميل</th><th>المدينة</th><th>المنتجات</th><th>تاريخ التسجيل</th><th>الحالة</th><th>إجراءات</th></tr>' + rows + '</table></div>';
 }
 
 function filterUsers(q) {
@@ -90,7 +93,14 @@ function viewUser(id) {
   if (!u) return;
   var items = DATA.items.filter(function(i) { return i.user_id === id; });
   var itemsHtml = items.map(function(i) { return '<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;margin-bottom:4px;font-size:0.82rem"><span>' + i.title + '</span><span style="color:var(--primary)">~' + i.estimated_value + ' ر.س</span></div>'; }).join('');
-  showModal('<h3>👤 ملف المستخدم</h3><div style="text-align:center;margin-bottom:16px"><div class="avatar" style="width:60px;height:60px;font-size:1.5rem;margin:0 auto 8px">' + (u.name||'؟')[0] + '</div><div style="font-weight:800;font-size:1.1rem">' + u.name + '</div><div style="color:var(--text3);font-size:0.82rem">📍 ' + u.city + ' · ⭐ ' + u.trust_score + '</div></div><div style="font-weight:700;margin-bottom:8px">📦 منتجات المستخدم (' + items.length + ')</div>' + itemsHtml + '<div class="modal-actions"><button class="header-btn" onclick="closeModal()" style="width:100%">إغلاق</button></div>');
+  var date = u.created_at ? u.created_at.split(' ')[0] : '---';
+  var infoRows = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">' +
+    '<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.68rem;color:var(--text3);margin-bottom:2px">📱 الجوال</div><div style="font-size:0.82rem;font-weight:700;direction:ltr">' + (u.phone||'---') + '</div></div>' +
+    '<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.68rem;color:var(--text3);margin-bottom:2px">📧 الإيميل</div><div style="font-size:0.78rem;font-weight:600;word-break:break-all">' + (u.email||'---') + '</div></div>' +
+    '<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.68rem;color:var(--text3);margin-bottom:2px">📅 تاريخ التسجيل</div><div style="font-size:0.82rem;font-weight:700">' + date + '</div></div>' +
+    '<div style="background:var(--bg3);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.68rem;color:var(--text3);margin-bottom:2px">⭐ التقييم</div><div style="font-size:0.82rem;font-weight:700;color:var(--primary)">' + (u.trust_score||5) + '</div></div>' +
+    '</div>';
+  showModal('<h3>👤 ملف المستخدم</h3><div style="text-align:center;margin-bottom:16px"><div class="avatar" style="width:60px;height:60px;font-size:1.5rem;margin:0 auto 8px">' + (u.name||'؟')[0] + '</div><div style="font-weight:800;font-size:1.1rem">' + u.name + '</div><div style="color:var(--text3);font-size:0.82rem">📍 ' + (u.city||'غير محدد') + '</div></div>' + infoRows + '<div style="font-weight:700;margin-bottom:8px">📦 منتجات المستخدم (' + items.length + ')</div>' + itemsHtml + '<div class="modal-actions"><button class="header-btn" onclick="closeModal()" style="width:100%">إغلاق</button></div>');
 }
 
 function renderItems() {
