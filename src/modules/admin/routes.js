@@ -36,7 +36,7 @@ router.get('/trades', (req, res) => {
       LEFT JOIN items i1 ON tr.offered_item_id = i1.id
       LEFT JOIN items i2 ON tr.wanted_item_id = i2.id
       LEFT JOIN users u1 ON tr.requester_id = u1.id
-      LEFT JOIN users u2 ON tr.receiver_id = u2.id
+      LEFT JOIN users u2 ON tr.requestee_id = u2.id
       ORDER BY tr.created_at DESC
     `);
     res.json({ success: true, data: trades || [] });

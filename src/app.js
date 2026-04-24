@@ -61,6 +61,9 @@ const itemRoutes = require('./modules/items/routes');
 const tradeRoutes = require('./modules/trades/routes');
 const chatRoutes = require('./modules/chat/routes');
 const adminRoutes = require('./modules/admin/routes');
+const reviewRoutes = require('./modules/reviews/routes');
+const notificationRoutes = require('./modules/notifications/routes');
+const wishlistRoutes = require('./modules/wishlist/routes');
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -68,24 +71,31 @@ app.use('/api/v1/items', itemRoutes);
 app.use('/api/v1/trades', tradeRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/wishlist', wishlistRoutes);
 
 // ---- Health Check & API Info ----
 app.get('/api/v1', (req, res) => {
   res.json({
     success: true,
     app: 'قايض - Qayed API',
-    version: '1.0.0',
+    version: '2.0.0',
     description: 'منصة المقايضة الذكية',
     endpoints: {
       auth: '/api/v1/auth',
       users: '/api/v1/users',
       items: '/api/v1/items',
       trades: '/api/v1/trades',
-      chat: '/api/v1/chat'
+      chat: '/api/v1/chat',
+      reviews: '/api/v1/reviews',
+      notifications: '/api/v1/notifications',
+      wishlist: '/api/v1/wishlist',
+      admin: '/api/v1/admin'
     },
     docs: {
       register: 'POST /api/v1/auth/register { phone, name, password }',
-      login: 'POST /api/v1/auth/login { phone, password }',
+      login: 'POST /api/v1/auth/login { loginId, password }',
       add_item: 'POST /api/v1/items { title, description, category } + images',
       get_items: 'GET /api/v1/items?category=&city=&search=',
       matches: 'GET /api/v1/items/matches',
@@ -94,7 +104,11 @@ app.get('/api/v1', (req, res) => {
       my_requests: 'GET /api/v1/trades/requests?type=incoming|outgoing',
       respond: 'PATCH /api/v1/trades/requests/:id { action: accept|reject }',
       chat: 'GET /api/v1/chat/conversations',
-      send_message: 'POST /api/v1/chat/:tradeId/messages { content }'
+      send_message: 'POST /api/v1/chat/:tradeId/messages { content }',
+      notifications: 'GET /api/v1/notifications',
+      wishlist: 'GET /api/v1/wishlist',
+      add_wishlist: 'POST /api/v1/wishlist { item_id }',
+      reviews: 'GET /api/v1/reviews/user/:userId'
     }
   });
 });

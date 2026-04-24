@@ -205,6 +205,18 @@ async function initializeDatabase() {
     )
   `);
 
+  database.run(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+      UNIQUE(user_id, item_id)
+    )
+  `);
+
   saveDb();
   console.log('✅ Database tables initialized');
 }
