@@ -1,19 +1,14 @@
 {
   "name": "qayed-backend",
-  "version": "1.0.0",
-  "description": "Qayed - Smart Bartering Platform API",
+  "version": "2.0.0",
+  "description": "Qayed - Smart Bartering Platform API (PostgreSQL)",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
-    "db:init": "node src/config/initDb.js"
+    "db:migrate": "node src/config/migrate.js"
   },
-  "keywords": [
-    "barter",
-    "trading",
-    "ai",
-    "qayed"
-  ],
+  "keywords": ["barter", "trading", "ai", "qayed"],
   "author": "Qayed Team",
   "license": "MIT",
   "dependencies": {
@@ -27,8 +22,8 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.3",
     "socket.io": "^4.8.3",
-    "sql.js": "^1.11.0",
     "uuid": "^10.0.0"
   }
 }

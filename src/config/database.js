@@ -1,224 +1,206 @@
 // =============================================
-// Qayed Backend - Database Configuration
-// sql.js (pure JS SQLite, no native deps)
+// Qayed Backend - PostgreSQL Database Layer
+// Using pg (node-postgres) with connection pool
 // =============================================
-const initSqlJs = require('sql.js');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const DB_PATH = path.join(__dirname, '..', '..', 'qayed.db');
+// ── Connection Pool ──────────────────────────
+// On Render: DATABASE_URL is set automatically
+// Locally: set DATABASE_URL in .env
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }   // Required for Render managed Postgres
+    : false,
+  max: 10,                            // max pool connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 
-let db = null;
-let SQL = null;
+pool.on('error', (err) => {
+  console.error('❌ Unexpected PostgreSQL pool error:', err.message);
+});
 
-async function getDb() {
-  if (db) return db;
+// ── Query Wrappers ───────────────────────────
 
-  SQL = await initSqlJs();
-
-  // Load existing DB or create new one
-  if (fs.existsSync(DB_PATH)) {
-    const buffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(buffer);
-  } else {
-    db = new SQL.Database();
+// Run a query that modifies data (INSERT / UPDATE / DELETE)
+// Returns the result object from pg
+async function run(sql, params = []) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(sql, params);
+    return result;
+  } finally {
+    client.release();
   }
-
-  console.log('📦 Connected to SQLite database');
-  return db;
 }
 
-function saveDb() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(DB_PATH, buffer);
-  }
+// Get a single row — returns null if not found
+async function get(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows[0] || null;
 }
 
-// Auto-save every 10 seconds
-setInterval(saveDb, 10000);
-
-// Wrapper: run a query that modifies data (INSERT/UPDATE/DELETE)
-function run(sql, params = []) {
-  db.run(sql, params);
-  saveDb();
+// Get all matching rows — returns []
+async function all(sql, params = []) {
+  const result = await pool.query(sql, params);
+  return result.rows;
 }
 
-// Wrapper: get single row
-function get(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
-    stmt.free();
-    return row;
-  }
-  stmt.free();
-  return null;
-}
-
-// Wrapper: get all rows
-function all(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
-}
-
+// ── Schema Initialization ────────────────────
 async function initializeDatabase() {
-  const database = await getDb();
+  const client = await pool.connect();
+  try {
+    console.log('🔌 Connected to PostgreSQL');
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      phone TEXT UNIQUE,
-      name TEXT NOT NULL,
-      email TEXT,
-      avatar_url TEXT,
-      bio TEXT DEFAULT '',
-      password_hash TEXT NOT NULL,
-      latitude REAL DEFAULT 0,
-      longitude REAL DEFAULT 0,
-      city TEXT DEFAULT '',
-      is_verified INTEGER DEFAULT 0,
-      trust_score REAL DEFAULT 5.0,
-      total_trades INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        phone       TEXT UNIQUE,
+        name        TEXT NOT NULL,
+        email       TEXT UNIQUE,
+        avatar_url  TEXT,
+        bio         TEXT DEFAULT '',
+        password_hash TEXT NOT NULL,
+        latitude    DECIMAL(10,6) DEFAULT 0,
+        longitude   DECIMAL(10,6) DEFAULT 0,
+        city        TEXT DEFAULT '',
+        is_verified INTEGER DEFAULT 0,
+        trust_score DECIMAL(3,2) DEFAULT 5.0,
+        total_trades INTEGER DEFAULT 0,
+        created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      id TEXT PRIMARY KEY,
-      phone TEXT NOT NULL,
-      code TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      is_used INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS otp_codes (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        phone       TEXT NOT NULL,
+        code        TEXT NOT NULL,
+        expires_at  TIMESTAMPTZ NOT NULL,
+        is_used     INTEGER DEFAULT 0,
+        created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS items (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT DEFAULT '',
-      category TEXT DEFAULT 'other',
-      condition TEXT DEFAULT 'used',
-      estimated_value REAL DEFAULT 0,
-      image_urls TEXT DEFAULT '[]',
-      status TEXT DEFAULT 'active',
-      latitude REAL DEFAULT 0,
-      longitude REAL DEFAULT 0,
-      city TEXT DEFAULT '',
-      ai_analysis TEXT DEFAULT '{}',
-      views_count INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS items (
+        id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title            TEXT NOT NULL,
+        description      TEXT DEFAULT '',
+        category         TEXT DEFAULT 'other',
+        condition        TEXT DEFAULT 'used',
+        estimated_value  DECIMAL(12,2) DEFAULT 0,
+        image_urls       TEXT[] DEFAULT '{}',
+        status           TEXT DEFAULT 'active',
+        latitude         DECIMAL(10,6) DEFAULT 0,
+        longitude        DECIMAL(10,6) DEFAULT 0,
+        city             TEXT DEFAULT '',
+        ai_analysis      JSONB DEFAULT '{}',
+        views_count      INTEGER DEFAULT 0,
+        wants            TEXT DEFAULT '',
+        created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS trade_requests (
-      id TEXT PRIMARY KEY,
-      requester_id TEXT NOT NULL,
-      requestee_id TEXT NOT NULL,
-      offered_item_id TEXT NOT NULL,
-      wanted_item_id TEXT NOT NULL,
-      status TEXT DEFAULT 'pending',
-      message TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now')),
-      responded_at TEXT,
-      FOREIGN KEY (requester_id) REFERENCES users(id),
-      FOREIGN KEY (requestee_id) REFERENCES users(id),
-      FOREIGN KEY (offered_item_id) REFERENCES items(id),
-      FOREIGN KEY (wanted_item_id) REFERENCES items(id)
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trade_requests (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        requester_id    UUID NOT NULL REFERENCES users(id),
+        requestee_id    UUID NOT NULL REFERENCES users(id),
+        offered_item_id UUID NOT NULL REFERENCES items(id),
+        wanted_item_id  UUID NOT NULL REFERENCES items(id),
+        status          TEXT DEFAULT 'pending',
+        message         TEXT DEFAULT '',
+        created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        responded_at    TIMESTAMPTZ
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS trades (
-      id TEXT PRIMARY KEY,
-      request_id TEXT NOT NULL,
-      item_a_id TEXT NOT NULL,
-      item_b_id TEXT NOT NULL,
-      user_a_id TEXT NOT NULL,
-      user_b_id TEXT NOT NULL,
-      status TEXT DEFAULT 'active',
-      user_a_code TEXT,
-      user_b_code TEXT,
-      verified_a INTEGER DEFAULT 0,
-      verified_b INTEGER DEFAULT 0,
-      latitude REAL,
-      longitude REAL,
-      completed_at TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (request_id) REFERENCES trade_requests(id)
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS trades (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        request_id   UUID NOT NULL REFERENCES trade_requests(id),
+        item_a_id    UUID NOT NULL REFERENCES items(id),
+        item_b_id    UUID NOT NULL REFERENCES items(id),
+        user_a_id    UUID NOT NULL REFERENCES users(id),
+        user_b_id    UUID NOT NULL REFERENCES users(id),
+        status       TEXT DEFAULT 'active',
+        user_a_code  TEXT,
+        user_b_code  TEXT,
+        verified_a   INTEGER DEFAULT 0,
+        verified_b   INTEGER DEFAULT 0,
+        latitude     DECIMAL(10,6),
+        longitude    DECIMAL(10,6),
+        completed_at TIMESTAMPTZ,
+        created_at   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS reviews (
-      id TEXT PRIMARY KEY,
-      trade_id TEXT NOT NULL,
-      reviewer_id TEXT NOT NULL,
-      reviewee_id TEXT NOT NULL,
-      rating INTEGER NOT NULL,
-      comment TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (trade_id) REFERENCES trades(id)
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        trade_id    UUID NOT NULL REFERENCES trades(id),
+        reviewer_id UUID NOT NULL REFERENCES users(id),
+        reviewee_id UUID NOT NULL REFERENCES users(id),
+        rating      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        comment     TEXT DEFAULT '',
+        created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id TEXT PRIMARY KEY,
-      trade_request_id TEXT NOT NULL,
-      sender_id TEXT NOT NULL,
-      content TEXT NOT NULL,
-      type TEXT DEFAULT 'text',
-      is_read INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (trade_request_id) REFERENCES trade_requests(id)
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        trade_request_id UUID NOT NULL REFERENCES trade_requests(id),
+        sender_id        UUID NOT NULL REFERENCES users(id),
+        content          TEXT NOT NULL,
+        type             TEXT DEFAULT 'text',
+        is_read          INTEGER DEFAULT 0,
+        created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS notifications (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      body TEXT DEFAULT '',
-      type TEXT DEFAULT 'general',
-      reference_id TEXT,
-      is_read INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title        TEXT NOT NULL,
+        body         TEXT DEFAULT '',
+        type         TEXT DEFAULT 'general',
+        reference_id UUID,
+        is_read      INTEGER DEFAULT 0,
+        created_at   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  database.run(`
-    CREATE TABLE IF NOT EXISTS wishlist (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      item_id TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
-      UNIQUE(user_id, item_id)
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS wishlist (
+        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id    UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, item_id)
+      )
+    `);
 
-  saveDb();
-  console.log('✅ Database tables initialized');
+    // ── Indexes for performance ──────────────
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_items_user_id    ON items(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_items_status      ON items(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_items_category    ON items(category)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_items_city        ON items(city)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_trades_users      ON trades(user_a_id, user_b_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_messages_trade    ON messages(trade_request_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_notifs_user       ON notifications(user_id, is_read)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_otp_phone         ON otp_codes(phone)`);
+
+    console.log('✅ PostgreSQL tables and indexes initialized');
+  } finally {
+    client.release();
+  }
 }
 
-module.exports = { getDb, initializeDatabase, run, get, all, saveDb };
+module.exports = { pool, initializeDatabase, run, get, all };

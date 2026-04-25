@@ -117,63 +117,67 @@ app.get('/api/v1/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
-// ---- Seed Demo Data ----
+// ---- Seed Demo Data (PostgreSQL) ----
 app.post('/api/v1/seed', async (req, res) => {
-  const { run, get, all } = require('./config/database');
+  const { get, run, all } = require('./config/database');
   const bcrypt = require('bcryptjs');
-  const { v4: uuidv4 } = require('uuid');
 
   // Check if already seeded
-  const existing = all('SELECT COUNT(*) as c FROM items', []);
-  if (existing && existing[0] && existing[0].c > 3) {
+  const existing = await all('SELECT COUNT(*) as c FROM items', []);
+  if (existing && existing[0] && parseInt(existing[0].c) > 3) {
     return res.json({ success: true, message: 'البيانات الموجودة كافية', seeded: false });
   }
 
   const hash = await bcrypt.hash('demo1234', 12);
   const users = [
-    { phone: '0511111111', name: 'سارة الأحمد', city: 'الرياض', lat: 24.71, lng: 46.67 },
-    { phone: '0522222222', name: 'خالد العتيبي', city: 'جدة', lat: 21.54, lng: 39.17 },
-    { phone: '0533333333', name: 'نورة السليمان', city: 'الدمام', lat: 26.43, lng: 50.10 },
-    { phone: '0544444444', name: 'عبدالله القحطاني', city: 'مكة', lat: 21.38, lng: 39.86 },
+    { phone: '0511111111', name: 'سارة الأحمد',      city: 'الرياض', lat: 24.71, lng: 46.67 },
+    { phone: '0522222222', name: 'خالد العتيبي',     city: 'جدة',    lat: 21.54, lng: 39.17 },
+    { phone: '0533333333', name: 'نورة السليمان',    city: 'الدمام', lat: 26.43, lng: 50.10 },
+    { phone: '0544444444', name: 'عبدالله القحطاني', city: 'مكة',    lat: 21.38, lng: 39.86 },
   ];
 
-  const items = [
-    { title: 'كاميرا كانون EOS R5', desc: 'كاميرا احترافية بحالة ممتازة مع عدسة 24-70mm و بطاقة ذاكرة 128GB', cat: 'كاميرات', cond: 'ممتاز', val: 3500 },
-    { title: 'آيفون 15 برو ماكس', desc: '256GB لون تيتانيوم أزرق - جديد بالكرتون والشاحن الأصلي', cat: 'هواتف', cond: 'جديد', val: 4200 },
-    { title: 'ساعة أبل ووتش Series 9', desc: 'مع سوارين رياضي وجلد - بالضمان سنتين إضافية', cat: 'ساعات', cond: 'ممتاز', val: 1800 },
-    { title: 'بلايستيشن 5 + يدتين', desc: 'PS5 Digital مع God of War و Spider-Man 2 و FIFA 25', cat: 'ألعاب', cond: 'جيد جداً', val: 1500 },
-    { title: 'لابتوب ماك بوك برو M3', desc: '14 بوصة 16GB RAM 512GB SSD - بحالة الوكالة مع الكرتون', cat: 'إلكترونيات', cond: 'ممتاز', val: 6500 },
-    { title: 'سماعة AirPods Max', desc: 'لون فضي - استخدام 3 أشهر فقط مع الكرتون والحافظة', cat: 'إلكترونيات', cond: 'جيد جداً', val: 1200 },
-    { title: 'مجموعة كتب برمجة احترافية', desc: 'Clean Code, Design Patterns, DDIA, System Design - حالة ممتازة', cat: 'كتب', cond: 'جيد', val: 400 },
-    { title: 'دراجة Trek هوائية رياضية', desc: 'مقاس L ألمنيوم خفيف - 21 سرعة - مناسبة للطرق والجبال', cat: 'رياضة', cond: 'جيد جداً', val: 2200 },
+  const itemsData = [
+    { title: 'كاميرا كانون EOS R5',      desc: 'كاميرا احترافية بحالة ممتازة',   cat: 'كاميرات',     cond: 'ممتاز',    val: 3500 },
+    { title: 'آيفون 15 برو ماكس',         desc: '256GB لون تيتانيوم أزرق - جديد', cat: 'هواتف',       cond: 'جديد',     val: 4200 },
+    { title: 'ساعة أبل ووتش Series 9',    desc: 'مع سوارين رياضي وجلد',           cat: 'ساعات',       cond: 'ممتاز',    val: 1800 },
+    { title: 'بلايستيشن 5 + يدتين',       desc: 'PS5 Digital مع ألعاب متعددة',    cat: 'ألعاب',       cond: 'جيد جداً', val: 1500 },
+    { title: 'لابتوب ماك بوك برو M3',    desc: '14 بوصة 16GB RAM 512GB SSD',     cat: 'إلكترونيات',  cond: 'ممتاز',    val: 6500 },
+    { title: 'سماعة AirPods Max',         desc: 'لون فضي - استخدام 3 أشهر',       cat: 'إلكترونيات',  cond: 'جيد جداً', val: 1200 },
+    { title: 'مجموعة كتب برمجة احترافية', desc: 'Clean Code, DDIA, System Design', cat: 'كتب',        cond: 'جيد',      val: 400  },
+    { title: 'دراجة Trek هوائية رياضية',  desc: 'مقاس L ألمنيوم خفيف - 21 سرعة', cat: 'رياضة',       cond: 'جيد جداً', val: 2200 },
   ];
 
   const userIds = [];
   for (const u of users) {
-    const id = uuidv4();
-    const ex = get('SELECT id FROM users WHERE phone=?', [u.phone]);
+    const ex = await get('SELECT id FROM users WHERE phone = $1', [u.phone]);
     if (!ex) {
-      run('INSERT INTO users (id,phone,name,password_hash,city,latitude,longitude,is_verified,trust_score) VALUES (?,?,?,?,?,?,?,1,?)',
-        [id, u.phone, u.name, hash, u.city, u.lat, u.lng, (4 + Math.random()).toFixed(1)]);
-      userIds.push(id);
+      const inserted = await get(
+        `INSERT INTO users (phone, name, password_hash, city, latitude, longitude, is_verified, trust_score)
+         VALUES ($1, $2, $3, $4, $5, $6, 1, $7) RETURNING id`,
+        [u.phone, u.name, hash, u.city, u.lat, u.lng, (4 + Math.random()).toFixed(1)]
+      );
+      userIds.push(inserted.id);
     } else {
       userIds.push(ex.id);
     }
   }
 
   let created = 0;
-  for (let i = 0; i < items.length; i++) {
+  for (let i = 0; i < itemsData.length; i++) {
     const userId = userIds[i % userIds.length];
-    const user = get('SELECT * FROM users WHERE id=?', [userId]);
-    const item = items[i];
-    const id = uuidv4();
-    run('INSERT INTO items (id,user_id,title,description,category,condition,estimated_value,image_urls,city,latitude,longitude,ai_analysis) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-      [id, userId, item.title, item.desc, item.cat, item.cond, item.val, '[]', user?.city||'', user?.latitude||0, user?.longitude||0, '{}']);
+    const user = await get('SELECT * FROM users WHERE id = $1', [userId]);
+    const item = itemsData[i];
+    await run(
+      `INSERT INTO items (user_id, title, description, category, condition, estimated_value, city, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [userId, item.title, item.desc, item.cat, item.cond, item.val,
+       user?.city || '', user?.latitude || 0, user?.longitude || 0]
+    );
     created++;
   }
 
-  console.log('🌱 Seeded ' + created + ' demo items');
-  res.json({ success: true, message: `تم إنشاء ${created} منتج تجريبي`, seeded: true });
+  console.log('🌱 Seeded ' + created + ' demo items (PostgreSQL)');
+  res.json({ success: true, message: `تم إنشاء ${created} منتج تجريبي ✅`, seeded: true });
 });
 
 // ---- Socket.io Events ----
