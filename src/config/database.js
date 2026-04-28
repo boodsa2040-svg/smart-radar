@@ -7,6 +7,16 @@ const { Pool } = require('pg');
 // ── Connection Pool ──────────────────────────
 // On Render: DATABASE_URL is set automatically
 // Locally: set DATABASE_URL in .env
+
+if (!process.env.DATABASE_URL) {
+  console.error('⚠️  DATABASE_URL is NOT set! Using fallback localhost.');
+  console.error('   Set DATABASE_URL in Render Environment Variables.');
+}
+
+console.log('🔗 DB Target:', process.env.DATABASE_URL 
+  ? process.env.DATABASE_URL.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@')
+  : 'NOT SET (will use localhost:5432)');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production'
@@ -14,7 +24,7 @@ const pool = new Pool({
     : false,
   max: 10,                            // max pool connections
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
 });
 
 pool.on('error', (err) => {
