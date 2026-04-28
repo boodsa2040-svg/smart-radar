@@ -236,6 +236,9 @@ async function initializeDatabase() {
       console.log('📦 Major categories synchronized');
     }
 
+    // Fix known icon issues
+    await client.query(`UPDATE categories SET icon = 'tv-outline' WHERE name = 'appliances' AND icon != 'tv-outline'`);
+
     // ── Indexes for performance ──────────────
     await client.query(`CREATE INDEX IF NOT EXISTS idx_items_user_id    ON items(user_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_items_status      ON items(status)`);
