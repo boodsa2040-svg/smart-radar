@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const { run, get, all } = require('../../config/database');
 const { authenticate } = require('../../middleware/auth');
+const { sendSystemMessage } = require('../chat/routes');
 
 // POST /api/v1/trades/request
 router.post('/request', authenticate, async (req, res) => {
@@ -104,6 +105,8 @@ router.patch('/requests/:id', authenticate, async (req, res) => {
     const newStatus = action === 'accept' ? 'accepted' : 'rejected';
     await run(`UPDATE trade_requests SET status = $1, responded_at = NOW() WHERE id = $2`, [newStatus, req.params.id]);
 
+    const io = req.app.get('io');
+
     if (action === 'accept') {
       const codeA = Math.floor(1000 + Math.random() * 9000).toString();
       const codeB = Math.floor(1000 + Math.random() * 9000).toString();
@@ -125,14 +128,20 @@ router.patch('/requests/:id', authenticate, async (req, res) => {
         ),
       ]);
 
-      if (req.app.get('io')) {
-        req.app.get('io').to(`user_${request.requester_id}`).emit('trade_status_changed', { id: request.id, status: newStatus });
+      // Auto system message in chat
+      sendSystemMessage(request.id, `✅ تم قبول طلب المقايضة بواسطة ${req.user.name}. تواصلوا لتحديد مكان التسليم!`, io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${request.requester_id}`).emit('trade_status_changed', { id: request.id, status: newStatus });
       }
     } else {
       await run(
         `INSERT INTO notifications (user_id, title, body, type, reference_id) VALUES ($1, $2, $3, 'trade_rejected', $4)`,
         [request.requester_id, '❌ تم رفض المقايضة', 'جرّب عروض أخرى!', request.id]
       );
+
+      // Auto system message in chat
+      sendSystemMessage(request.id, `❌ تم رفض طلب المقايضة. يمكنك تجربة عروض أخرى.`, io).catch(() => {});
     }
 
     res.json({ success: true, message: action === 'accept' ? 'تم قبول المقايضة 🎉' : 'تم رفض المقايضة', data: { status: newStatus } });
@@ -238,9 +247,13 @@ router.post('/:id/verify', authenticate, async (req, res) => {
           [updated.user_b_id, '✅ مقايضة تمت بنجاح!', 'تهانينا! لا تنسَ تقييم الطرف الآخر.', trade.id]),
       ]);
 
-      if (req.app.get('io')) {
-        req.app.get('io').to(`user_${updated.user_a_id}`).emit('trade_completed', { tradeId: trade.id });
-        req.app.get('io').to(`user_${updated.user_b_id}`).emit('trade_completed', { tradeId: trade.id });
+      // Auto system message
+      const io = req.app.get('io');
+      sendSystemMessage(updated.request_id, '🎉 تمت المقايضة بنجاح! شكراً لاستخدامكم قايض. لا تنسوا التقييم.', io).catch(() => {});
+
+      if (io) {
+        io.to(`user_${updated.user_a_id}`).emit('trade_completed', { tradeId: trade.id });
+        io.to(`user_${updated.user_b_id}`).emit('trade_completed', { tradeId: trade.id });
       }
 
       return res.json({ success: true, message: 'تم إكمال المقايضة بنجاح! 🎉', data: { status: 'completed' } });
