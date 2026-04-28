@@ -32,7 +32,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 // GET /api/v1/items/categories/list
 router.get('/categories/list', async (req, res) => {
   try {
-    const cats = await all('SELECT * FROM categories WHERE is_active = 1 ORDER BY label ASC');
+    const cats = await all(`SELECT * FROM categories WHERE is_active = 1 ORDER BY CASE WHEN name = 'other' THEN 1 ELSE 0 END, label ASC`);
     res.json({ success: true, data: cats });
   } catch (err) {
     res.json({ success: true, data: [
