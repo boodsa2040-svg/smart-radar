@@ -187,6 +187,45 @@ async function initializeDatabase() {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS categories (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name        TEXT UNIQUE NOT NULL,
+        label       TEXT NOT NULL,
+        icon        TEXT DEFAULT 'apps-outline',
+        color       TEXT DEFAULT '#6366F1',
+        is_active   INTEGER DEFAULT 1,
+        created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // ── Default Categories (Expanded for high use) ───────────────────
+    const catCount = await client.query('SELECT COUNT(*) as c FROM categories');
+    if (parseInt(catCount.rows[0].c) <= 8) { // If only old defaults or empty
+      const defaultCats = [
+        ['phones',      'جوالات',       'phone-portrait-outline', '#00BFA6'],
+        ['electronics', 'إلكترونيات',   'laptop-outline',         '#3B82F6'],
+        ['appliances',  'أجهزة منزلية', 'kettle-outline',         '#F59E0B'],
+        ['fashion',     'أزياء وملابس', 'shirt-outline',          '#6366F1'],
+        ['furniture',   'أثاث وديكور',  'home-outline',           '#10B981'],
+        ['cars',        'سيارات',       'car-sport-outline',      '#EF4444'],
+        ['games',       'ألعاب',        'game-controller-outline', '#8B5CF6'],
+        ['watches',     'ساعات',        'watch-outline',          '#EC4899'],
+        ['books',       'كتب وتعليم',   'book-outline',           '#6B7280'],
+        ['sports',      'رياضة ولياقة', 'fitness-outline',        '#22C55E'],
+        ['cameras',     'كاميرات',      'camera-outline',         '#F97316'],
+        ['beauty',      'عطور وتجميل',  'color-filter-outline',   '#D946EF'],
+        ['other',       'أخرى',         'apps-outline',           '#94A3B8'],
+      ];
+      for (const [name, label, icon, color] of defaultCats) {
+        await client.query(
+          'INSERT INTO categories (name, label, icon, color) VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO UPDATE SET label = EXCLUDED.label, icon = EXCLUDED.icon, color = EXCLUDED.color',
+          [name, label, icon, color]
+        );
+      }
+      console.log('📦 Major categories synchronized');
+    }
+
     // ── Indexes for performance ──────────────
     await client.query(`CREATE INDEX IF NOT EXISTS idx_items_user_id    ON items(user_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_items_status      ON items(status)`);

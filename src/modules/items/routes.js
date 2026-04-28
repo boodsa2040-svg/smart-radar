@@ -30,8 +30,17 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 // GET /api/v1/items/categories/list
-router.get('/categories/list', (req, res) => {
-  res.json({ success: true, data: CATEGORIES });
+router.get('/categories/list', async (req, res) => {
+  try {
+    const cats = await all('SELECT * FROM categories WHERE is_active = 1 ORDER BY label ASC');
+    res.json({ success: true, data: cats });
+  } catch (err) {
+    res.json({ success: true, data: [
+      { name: 'electronics', label: 'إلكترونيات', icon: 'phone-portrait-outline', color: '#00BFA6' },
+      { name: 'fashion', label: 'أزياء', icon: 'shirt-outline', color: '#6366F1' },
+      { name: 'other', label: 'أخرى', icon: 'apps-outline', color: '#6B7280' }
+    ]});
+  }
 });
 
 // GET /api/v1/items/my

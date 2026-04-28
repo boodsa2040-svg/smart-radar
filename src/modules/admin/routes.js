@@ -213,4 +213,48 @@ router.put('/users/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ── GET /api/v1/items/categories/list ──
+router.get('/categories/list', async (req, res) => {
+  try {
+    const cats = await all('SELECT * FROM categories WHERE is_active = 1 ORDER BY label ASC');
+    res.json({ success: true, data: cats });
+  } catch (err) {
+    // Fallback if table doesn't exist yet or error
+    res.json({ success: true, data: [
+      { name: 'electronics', label: 'إلكترونيات', icon: 'phone-portrait-outline', color: '#00BFA6' },
+      { name: 'fashion', label: 'أزياء', icon: 'shirt-outline', color: '#6366F1' },
+      { name: 'other', label: 'أخرى', icon: 'apps-outline', color: '#6B7280' }
+    ]});
+  }
+});
+
+// ── GET /api/v1/admin/categories ── All categories
+router.get('/categories', async (req, res) => {
+  try {
+    const cats = await all('SELECT * FROM categories ORDER BY created_at DESC');
+    res.json({ success: true, data: cats });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ── POST /api/v1/admin/categories ── Add new category
+router.post('/categories', async (req, res) => {
+  try {
+    const { name, label, icon, color } = req.body;
+    if (!name || !label) return res.status(400).json({ success: false, error: 'يرجى إدخال اسم وتسمية الفئة' });
+    const cat = await get(
+      'INSERT INTO categories (name, label, icon, color) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, label, icon || 'apps-outline', color || '#6366F1']
+    );
+    res.json({ success: true, message: 'تم إضافة الفئة بنجاح ✅', data: cat });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ── DELETE /api/v1/admin/categories/:id ── Delete category
+router.delete('/categories/:id', async (req, res) => {
+  try {
+    await run('DELETE FROM categories WHERE id = $1', [req.params.id]);
+    res.json({ success: true, message: 'تم حذف الفئة بنجاح' });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;

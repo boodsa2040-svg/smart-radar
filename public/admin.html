@@ -3,188 +3,274 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم قايض - Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <title>قايض | لوحة التحكم</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    :root {
-      --bg: #060c18; --bg2: #0a1628; --bg3: #0e1f3a;
-      --card: rgba(14,25,45,0.85); --card-hover: rgba(18,32,56,0.95);
-      --primary: #00d4aa; --primary-dim: rgba(0,212,170,0.12);
-      --accent: #00b8d4; --gradient: linear-gradient(135deg, #00d4aa, #00b8d4);
-      --text: #f0f4f8; --text2: #8fa3bf; --text3: #5a7190;
-      --border: rgba(0,212,170,0.12); --border2: rgba(255,255,255,0.06);
-      --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
-      --r: 14px;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--primary:#00d4aa;--bg:#060c18;--bg2:#0a1628;--bg3:#0e1f3a;--card:rgba(14,31,58,0.6);--border:rgba(0,212,170,0.15);--text:#f0f4f8;--text2:#8fa3bf;--text3:#5a7190;--danger:#ff4757;--warn:#f1c40f;--blue:#3498db}
+    body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
+    ::selection{background:var(--primary);color:var(--bg)}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--primary);border-radius:99px}
 
-    /* Layout */
-    .layout { display: flex; min-height: 100vh; }
-    .sidebar {
-      width: 260px; background: var(--bg2); border-left: 1px solid var(--border2);
-      padding: 24px 16px; position: fixed; top: 0; right: 0; height: 100vh;
-      overflow-y: auto; z-index: 100; transition: transform 0.3s;
-    }
-    .main { flex: 1; margin-right: 260px; padding: 24px 28px 40px; min-height: 100vh; }
+    .sidebar{width:260px;background:var(--bg2);border-left:1px solid var(--border);padding:28px 16px;display:flex;flex-direction:column;gap:24px;flex-shrink:0}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;font-size:1.4rem;font-weight:800;color:var(--primary)}
+    .sidebar-logo img{width:36px;border-radius:8px}
+    .nav-menu{display:flex;flex-direction:column;gap:6px}
+    .nav-item{padding:12px 18px;border-radius:12px;cursor:pointer;font-weight:600;color:var(--text2);transition:.2s;display:flex;align-items:center;gap:10px;font-size:.95rem}
+    .nav-item:hover{background:rgba(0,212,170,0.1);color:var(--primary)}
+    .nav-item.active{background:linear-gradient(135deg,#00d4aa,#00b8d4);color:var(--bg)}
 
-    /* Sidebar */
-    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 0 8px; }
-    .logo-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #060c18; font-weight: 900; }
-    .logo h1 { font-size: 1.3rem; font-weight: 900; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .logo span { font-size: 0.7rem; color: var(--text3); display: block; -webkit-text-fill-color: var(--text3); }
+    .main{flex:1;overflow-y:auto;padding:32px 36px}
+    .page-title{font-size:1.8rem;font-weight:800;margin-bottom:6px}
+    .page-sub{color:var(--text2);margin-bottom:28px}
 
-    .nav-section { margin-bottom: 24px; }
-    .nav-section-title { font-size: 0.7rem; color: var(--text3); font-weight: 700; padding: 0 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
-      color: var(--text2); cursor: pointer; transition: all 0.2s; font-size: 0.88rem; font-weight: 600;
-      margin-bottom: 2px; border: none; background: none; width: 100%; font-family: 'Cairo'; text-align: right;
-    }
-    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-    .nav-item.active { background: var(--primary-dim); color: var(--primary); }
-    .nav-item .icon { font-size: 1.15rem; width: 28px; text-align: center; }
-    .nav-item .badge { margin-right: auto; background: var(--primary); color: #060c18; padding: 1px 8px; border-radius: 999px; font-size: 0.65rem; font-weight: 800; }
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:32px}
+    .stat-card{background:var(--card);border:1px solid var(--border);padding:22px;border-radius:16px;transition:.3s}
+    .stat-card:hover{transform:translateY(-4px);border-color:var(--primary)}
+    .stat-val{font-size:2.2rem;font-weight:800;color:var(--primary)}
+    .stat-lbl{color:var(--text2);font-size:.9rem}
 
-    /* Header */
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .header h2 { font-size: 1.5rem; font-weight: 900; }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    .header-btn { padding: 8px 18px; border-radius: 10px; border: 1px solid var(--border2); background: var(--card); color: var(--text); font-family: 'Cairo'; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
-    .header-btn:hover { border-color: var(--border); background: var(--card-hover); }
-    .header-btn.primary { background: var(--gradient); color: #060c18; border: none; }
+    .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    table{width:100%;border-collapse:collapse;text-align:right}
+    th,td{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+    th{background:rgba(0,0,0,.2);color:var(--text2);font-weight:600;font-size:.85rem}
+    td{font-size:.9rem}tr:last-child td{border:none}tr:hover td{background:rgba(255,255,255,.02)}
 
-    /* Stats */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-    .stat-card {
-      background: var(--card); border: 1px solid var(--border2); border-radius: var(--r);
-      padding: 20px; transition: all 0.3s; position: relative; overflow: hidden;
-    }
-    .stat-card:hover { border-color: var(--border); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-    .stat-card .icon { font-size: 2rem; margin-bottom: 8px; }
-    .stat-card .value { font-size: 2rem; font-weight: 900; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .stat-card .label { font-size: 0.82rem; color: var(--text2); font-weight: 600; }
-    .stat-card .change { font-size: 0.72rem; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; }
-    .stat-card .change.up { background: rgba(81,207,102,0.1); color: var(--success); }
-    .stat-card .change.down { background: rgba(255,107,107,0.1); color: var(--danger); }
-    .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient); opacity: 0; transition: opacity 0.3s; }
-    .stat-card:hover::after { opacity: 1; }
+    .btn-sm{padding:5px 12px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:'Cairo'}
+    .btn-del{background:rgba(255,71,87,.1);color:var(--danger)}.btn-del:hover{background:var(--danger);color:#fff}
+    .btn-edit{background:rgba(0,212,170,.1);color:var(--primary);margin-left:6px}.btn-edit:hover{background:var(--primary);color:var(--bg)}
+    .btn-send{background:rgba(52,152,219,.1);color:var(--blue);margin-left:6px}.btn-send:hover{background:var(--blue);color:#fff}
+    .btn-broadcast{padding:10px 24px;border-radius:12px;background:linear-gradient(135deg,#00d4aa,#00b8d4);color:var(--bg);font-weight:700;border:none;cursor:pointer;font-family:'Cairo';font-size:.95rem;margin-bottom:20px}
 
-    /* Table */
-    .card {
-      background: var(--card); border: 1px solid var(--border2); border-radius: var(--r);
-      overflow: hidden; margin-bottom: 20px;
-    }
-    .card-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 20px; border-bottom: 1px solid var(--border2);
-    }
-    .card-header h3 { font-size: 1.05rem; font-weight: 800; }
-    .card-header .actions { display: flex; gap: 8px; }
+    .badge{padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700}
+    .b-green{background:rgba(0,212,170,.15);color:var(--primary)}
+    .b-yellow{background:rgba(241,196,15,.15);color:var(--warn)}
+    .b-blue{background:rgba(52,152,219,.15);color:var(--blue)}
+    .b-red{background:rgba(255,71,87,.15);color:var(--danger)}
 
-    table { width: 100%; border-collapse: collapse; }
-    th { padding: 12px 16px; text-align: right; font-size: 0.78rem; color: var(--text3); font-weight: 700; border-bottom: 1px solid var(--border2); background: rgba(0,0,0,0.15); }
-    td { padding: 12px 16px; font-size: 0.85rem; border-bottom: 1px solid var(--border2); vertical-align: middle; }
-    tr:hover td { background: rgba(0,212,170,0.02); }
-    tr:last-child td { border-bottom: none; }
-
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--gradient); display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: #060c18; font-size: 0.8rem; }
-    .badge-status { padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
-    .badge-active { background: rgba(81,207,102,0.12); color: var(--success); border: 1px solid rgba(81,207,102,0.2); }
-    .badge-pending { background: rgba(255,212,59,0.12); color: var(--warning); border: 1px solid rgba(255,212,59,0.2); }
-    .badge-blocked { background: rgba(255,107,107,0.12); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
-
-    .action-btn { padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; font-family: 'Cairo'; font-size: 0.72rem; font-weight: 600; transition: all 0.2s; }
-    .action-btn:hover { border-color: var(--border); color: var(--text); }
-    .action-btn.danger { border-color: rgba(255,107,107,0.2); color: var(--danger); }
-    .action-btn.danger:hover { background: rgba(255,107,107,0.1); }
-
-    /* Charts */
-    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .chart-bar { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding: 0 8px; }
-    .chart-col { flex: 1; background: var(--gradient); border-radius: 6px 6px 0 0; position: relative; transition: all 0.3s; min-width: 20px; cursor: pointer; opacity: 0.7; }
-    .chart-col:hover { opacity: 1; }
-    .chart-col .tip { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: var(--primary); font-weight: 800; white-space: nowrap; }
-    .chart-col .lbl { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--text3); white-space: nowrap; }
-    .donut { width: 140px; height: 140px; border-radius: 50%; position: relative; margin: 10px auto; }
-    .donut-center { position: absolute; inset: 30px; border-radius: 50%; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .donut-center .val { font-size: 1.5rem; font-weight: 900; color: var(--primary); }
-    .donut-center .lbl { font-size: 0.65rem; color: var(--text3); }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1000; display: none; align-items: center; justify-content: center; }
-    .modal-overlay.show { display: flex; }
-    .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 28px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease; }
-    .modal h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 16px; }
-    .modal .form-group { margin-bottom: 14px; }
-    .modal label { font-size: 0.82rem; color: var(--text2); font-weight: 600; display: block; margin-bottom: 5px; }
-    .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; color: var(--text); font-family: 'Cairo'; font-size: 0.88rem; outline: none; }
-    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--primary); }
-    .modal textarea { min-height: 80px; resize: vertical; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-    .modal-actions button { flex: 1; }
-
-    /* Search */
-    .search-input { padding: 9px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; color: var(--text); font-family: 'Cairo'; font-size: 0.82rem; outline: none; min-width: 220px; }
-    .search-input:focus { border-color: var(--primary); }
-
-    /* Responsive */
-    @media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 768px) { .sidebar { transform: translateX(100%); } .sidebar.open { transform: translateX(0); } .main { margin-right: 0; } .stats { grid-template-columns: 1fr 1fr; } }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .loading { display: flex; align-items: center; justify-content: center; padding: 60px; }
-    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; margin-bottom: 0; background: var(--bg3); padding: 4px; border-radius: 12px; }
-    .tab { padding: 7px 16px; border-radius: 8px; border: none; background: none; color: var(--text3); font-family: 'Cairo'; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
-    .tab.active { background: var(--primary-dim); color: var(--primary); }
+    .tab{display:none}.tab.active{display:block;animation:fadeIn .3s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .empty{text-align:center;padding:40px;color:var(--text3)}
   </style>
 </head>
 <body>
-  <div class="layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="logo">
-        <div class="logo-icon">🔄</div>
-        <div><h1>قايض</h1><span>لوحة التحكم</span></div>
+  <aside class="sidebar">
+    <div class="sidebar-logo"><img src="assets/logo.png" alt="">قايض أدمن</div>
+    <nav class="nav-menu">
+      <div class="nav-item active" onclick="go('dash',this)">📊 الإحصائيات</div>
+      <div class="nav-item" onclick="go('users',this)">👥 المستخدمين</div>
+      <div class="nav-item" onclick="go('items',this)">📦 المنتجات</div>
+      <div class="nav-item" onclick="go('trades',this)">🤝 المقايضات</div>
+      <div class="nav-item" onclick="go('msgs',this)">💬 الرسائل</div>
+      <div class="nav-item" onclick="go('reviews',this)">⭐ التقييمات</div>
+      <div class="nav-item" onclick="go('cats',this)">🗂️ الفئات</div>
+      <div class="nav-item" onclick="go('notify',this)">🔔 إرسال إشعار</div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!-- Dashboard -->
+    <section id="t-dash" class="tab active">
+      <h1 class="page-title">نظرة عامة</h1><p class="page-sub">إحصائيات المنصة الحية — مرتبطة بقاعدة البيانات مباشرة</p>
+      <div class="stats-grid" id="statsGrid"><div class="empty">جاري التحميل...</div></div>
+    </section>
+    <!-- Users -->
+    <section id="t-users" class="tab">
+      <h1 class="page-title">إدارة المستخدمين</h1><p class="page-sub">جميع المستخدمين المسجلين في التطبيق</p>
+      <div class="tbl-wrap"><table><thead><tr><th>الاسم</th><th>الجوال</th><th>كلمة المرور (مشفرة)</th><th>المدينة</th><th>التسجيل</th><th>المنتجات</th><th>المقايضات</th><th>التقييمات</th><th>إجراءات</th></tr></thead><tbody id="usersT"><tr><td colspan="9" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Items -->
+    <section id="t-items" class="tab">
+      <h1 class="page-title">المنتجات المعروضة</h1><p class="page-sub">كل المنتجات التي يراها المستخدمون في التطبيق</p>
+      <div class="tbl-wrap"><table><thead><tr><th>المنتج</th><th>المالك</th><th>الفئة</th><th>القيمة</th><th>الحالة</th><th>المدينة</th><th>إجراءات</th></tr></thead><tbody id="itemsT"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Trades -->
+    <section id="t-trades" class="tab">
+      <h1 class="page-title">حركة المقايضات</h1><p class="page-sub">طلبات التبادل بين المستخدمين</p>
+      <div class="tbl-wrap"><table><thead><tr><th>الطرف الأول</th><th>يعرض</th><th>الطرف الثاني</th><th>يطلب</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="tradesT"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Messages -->
+    <section id="t-msgs" class="tab">
+      <h1 class="page-title">سجل الرسائل</h1><p class="page-sub">آخر 200 رسالة تمت عبر المنصة</p>
+      <div class="tbl-wrap"><table><thead><tr><th>المرسل</th><th>الرسالة</th><th>المنتج المعروض</th><th>المنتج المطلوب</th><th>التاريخ</th></tr></thead><tbody id="msgsT"><tr><td colspan="5" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Reviews -->
+    <section id="t-reviews" class="tab">
+      <h1 class="page-title">التقييمات</h1><p class="page-sub">تقييمات المستخدمين لبعضهم</p>
+      <div class="tbl-wrap"><table><thead><tr><th>من</th><th>إلى</th><th>التقييم</th><th>التعليق</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="reviewsT"><tr><td colspan="6" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Categories -->
+    <section id="t-cats" class="tab">
+      <h1 class="page-title">إدارة الفئات</h1><p class="page-sub">الفئات التي تظهر للمستخدمين عند إضافة منتج</p>
+      <button class="btn-broadcast" onclick="addCategory()">➕ إضافة فئة جديدة</button>
+      <div class="tbl-wrap"><table><thead><tr><th>الأيقونة</th><th>الاسم (برمجياً)</th><th>التسمية (للمستخدم)</th><th>اللون</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="catsT"><tr><td colspan="6" class="empty">جاري التحميل...</td></tr></tbody></table></div>
+    </section>
+    <!-- Broadcast -->
+    <section id="t-notify" class="tab">
+      <h1 class="page-title">إرسال إشعار جماعي</h1><p class="page-sub">أرسل إشعاراً يصل لجميع مستخدمي التطبيق فوراً</p>
+      <div style="max-width:500px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px">
+        <label style="color:var(--text2);font-size:.9rem">عنوان الإشعار</label>
+        <input id="bTitle" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Cairo';margin:8px 0 16px;font-size:1rem" placeholder="مثال: تحديث جديد 🎉">
+        <label style="color:var(--text2);font-size:.9rem">نص الإشعار</label>
+        <textarea id="bBody" rows="3" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Cairo';margin:8px 0 20px;font-size:.95rem;resize:vertical" placeholder="تفاصيل الإشعار..."></textarea>
+        <button class="btn-broadcast" onclick="broadcast()">🔔 إرسال للجميع</button>
       </div>
+    </section>
+  </main>
 
-      <div class="nav-section">
-        <div class="nav-section-title">رئيسي</div>
-        <button class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> الرئيسية</button>
-        <button class="nav-item" onclick="showPage('users')"><span class="icon">👥</span> المستخدمون <span class="badge" id="users-count">0</span></button>
-        <button class="nav-item" onclick="showPage('items')"><span class="icon">📦</span> المنتجات <span class="badge" id="items-count">0</span></button>
-        <button class="nav-item" onclick="showPage('trades')"><span class="icon">🤝</span> المقايضات <span class="badge" id="trades-count">0</span></button>
-      </div>
+<script>
+const API='https://qayed-api.onrender.com/api/v1/admin';
+const sw=(t,o)=>Swal.fire({background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',...o});
+const fmtDate=d=>d?new Date(d).toLocaleDateString('ar-SA'):'-';
+const esc=s=>(s||'').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
-      <div class="nav-section">
-        <div class="nav-section-title">إدارة</div>
-        <button class="nav-item" onclick="showPage('categories')"><span class="icon">📁</span> التصنيفات</button>
-        <button class="nav-item" onclick="showPage('reports')"><span class="icon">📈</span> التقارير</button>
-        <button class="nav-item" onclick="showPage('notifications')"><span class="icon">🔔</span> الإشعارات</button>
-      </div>
+window.onload=()=>{
+  Swal.fire({title:'تسجيل الدخول',input:'password',inputPlaceholder:'كلمة المرور...',background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',allowOutsideClick:false,allowEscapeKey:false}).then(r=>{
+    if(r.value==='123'){loadDash()}else{sw('',{icon:'error',title:'خطأ',text:'كلمة المرور غير صحيحة'}).then(()=>location.reload())}
+  });
+};
 
-      <div class="nav-section">
-        <div class="nav-section-title">النظام</div>
-        <button class="nav-item" onclick="showPage('settings')"><span class="icon">⚙️</span> الإعدادات</button>
-        <button class="nav-item" onclick="showPage('logs')"><span class="icon">📋</span> السجلات</button>
-      </div>
-    </aside>
+function go(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('t-'+id).classList.add('active');el.classList.add('active');
+  ({dash:loadDash,users:loadUsers,items:loadItems,trades:loadTrades,msgs:loadMsgs,reviews:loadReviews,cats:loadCats})[id]?.();
+}
 
-    <!-- Main Content -->
-    <main class="main" id="main-content">
-      <div class="loading"><div class="spinner"></div></div>
-    </main>
-  </div>
+async function api(ep){try{const r=await fetch(API+'/'+ep);const d=await r.json();return d.data}catch(e){sw('',{icon:'error',title:'خطأ اتصال',text:e.message});return null}}
 
-  <!-- Modal -->
-  <div class="modal-overlay" id="modal">
-    <div class="modal" id="modal-content"></div>
-  </div>
+async function loadCats(){
+  const cats=await api('categories');if(!cats)return;
+  document.getElementById('catsT').innerHTML=cats.length?cats.map(c=>`<tr>
+    <td style="font-size:1.2rem">${c.icon||'📦'}</td>
+    <td><code>${esc(c.name)}</code></td>
+    <td><strong>${esc(c.label)}</strong></td>
+    <td><span style="color:${c.color}">${c.color}</span></td>
+    <td>${fmtDate(c.created_at)}</td>
+    <td>
+      <button class="btn-sm btn-del" onclick="delCat('${c.id}')">حذف</button>
+    </td></tr>`).join(''):'<tr><td colspan="6" class="empty">لا يوجد فئات</td></tr>';
+}
 
-<script src="admin.js?v=2"></script>
+async function addCategory(){
+  const{value:v}=await Swal.fire({
+    title:'إضافة فئة جديدة',
+    html:`<input id="c-n" class="swal2-input" placeholder="الاسم برمجياً (e.g. cars)"><input id="c-l" class="swal2-input" placeholder="التسمية للمستخدم (e.g. سيارات)"><input id="c-i" class="swal2-input" placeholder="الأيقونة (Ionicons name)"><input id="c-c" class="swal2-input" value="#6366F1" type="color">`,
+    background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',
+    preConfirm:()=>({name:document.getElementById('c-n').value,label:document.getElementById('c-l').value,icon:document.getElementById('c-i').value,color:document.getElementById('c-c').value})
+  });
+  if(v&&v.name&&v.label){
+    const r=await fetch(API+'/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});
+    const d=await r.json();
+    if(d.success){sw('',{icon:'success',title:'تمت الإضافة',timer:1200});loadCats()}else{sw('',{icon:'error',title:'خطأ',text:d.error})}
+  }
+}
+
+async function delCat(id){
+  const c=await Swal.fire({title:'حذف الفئة؟',text:'هذا قد يؤثر على المنتجات المرتبطة بها',icon:'warning',showCancelButton:true,confirmButtonText:'احذف',background:'#0a1628',color:'#fff',confirmButtonColor:'#ff4757'});
+  if(c.isConfirmed){await fetch(API+'/categories/'+id,{method:'DELETE'});sw('',{icon:'success',title:'تم الحذف',timer:1200});loadCats()}
+}
+
+async function loadDash(){
+  const d=await api('stats');if(!d)return;
+  document.getElementById('statsGrid').innerHTML=[
+    ['👥','المستخدمين',d.users],['📦','المنتجات النشطة',d.items],['🤝','طلبات المقايضة',d.trades],
+    ['✅','صفقات مكتملة',d.completed],['💬','إجمالي الرسائل',d.messages],['🔔','إشعارات غير مقروءة',d.notifications],
+    ['⭐','التقييمات',d.reviews]
+  ].map(([i,l,v])=>`<div class="stat-card"><div style="font-size:1.5rem;margin-bottom:6px">${i}</div><div class="stat-val">${v}</div><div class="stat-lbl">${l}</div></div>`).join('');
+}
+
+async function loadUsers(){
+  const u=await api('users');if(!u)return;
+  document.getElementById('usersT').innerHTML=u.length?u.map(x=>{
+    const hash=x.password_hash||'-';
+    const shortHash=hash.length>20?hash.substring(0,20)+'...':hash;
+    return`<tr>
+    <td><strong>${esc(x.name)}</strong></td><td>${x.phone||'-'}</td>
+    <td title="${esc(hash)}" style="cursor:help;font-size:.75rem;color:var(--text3);font-family:monospace;direction:ltr">${esc(shortHash)}</td>
+    <td>${x.city||'-'}</td>
+    <td>${fmtDate(x.created_at)}</td><td>${x.items_count}</td><td>${x.trades_count}</td><td>${x.reviews_count}</td>
+    <td>
+      <button class="btn-sm btn-edit" onclick="editUser('${x.id}','${esc(x.name)}','${x.phone||''}','${x.city||''}')">تعديل</button>
+      <button class="btn-sm btn-send" onclick="notifyOne('${x.id}','${esc(x.name)}')">إشعار</button>
+      <button class="btn-sm btn-del" onclick="delUser('${x.id}','${esc(x.name)}')">حذف</button>
+    </td></tr>`}).join(''):'<tr><td colspan="9" class="empty">لا يوجد مستخدمين</td></tr>';
+}
+
+async function delUser(id,n){
+  const c=await Swal.fire({title:`حذف ${n}؟`,text:'سيتم حذف كافة بياناته ومنتجاته نهائياً!',icon:'warning',showCancelButton:true,confirmButtonText:'احذف',cancelButtonText:'إلغاء',background:'#0a1628',color:'#fff',confirmButtonColor:'#ff4757'});
+  if(c.isConfirmed){await fetch(API+'/users/'+id,{method:'DELETE'});sw('',{icon:'success',title:'تم الحذف',timer:1200});loadUsers()}
+}
+
+async function editUser(id,name,phone,city){
+  const{value:v}=await Swal.fire({title:'تعديل مستخدم',html:`<input id="s-n" class="swal2-input" value="${name}" placeholder="الاسم"><input id="s-p" class="swal2-input" value="${phone}" placeholder="الجوال"><input id="s-c" class="swal2-input" value="${city}" placeholder="المدينة">`,background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',preConfirm:()=>({name:document.getElementById('s-n').value,phone:document.getElementById('s-p').value,city:document.getElementById('s-c').value})});
+  if(v){await fetch(API+'/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});sw('',{icon:'success',title:'تم التعديل',timer:1200});loadUsers()}
+}
+
+async function notifyOne(id,name){
+  const{value:v}=await Swal.fire({title:`إشعار لـ ${name}`,html:`<input id="s-t" class="swal2-input" placeholder="عنوان الإشعار"><input id="s-b" class="swal2-input" placeholder="النص">`,background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',preConfirm:()=>({title:document.getElementById('s-t').value,body:document.getElementById('s-b').value})});
+  if(v&&v.title){await fetch(API+'/notify/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});sw('',{icon:'success',title:'تم الإرسال',timer:1200})}
+}
+
+async function loadItems(){
+  const items=await api('items');if(!items)return;
+  document.getElementById('itemsT').innerHTML=items.length?items.map(i=>{
+    const bc=i.status==='active'?'b-green':'b-yellow';
+    return`<tr><td><strong>${esc(i.title)}</strong></td><td>${esc(i.owner_name)||'-'}</td><td>${i.category||'-'}</td>
+    <td>${i.estimated_value} ر.س</td><td><span class="badge ${bc}">${i.status}</span></td><td>${i.city||'-'}</td>
+    <td><button class="btn-sm btn-edit" onclick='editItem(${JSON.stringify({id:i.id,title:i.title,description:i.description,category:i.category,condition:i.condition,estimated_value:i.estimated_value,city:i.city,status:i.status}).replace(/'/g,"&#39;")})'>تعديل</button>
+    <button class="btn-sm btn-del" onclick="delItem('${i.id}','${esc(i.title)}')">حذف</button></td></tr>`}).join(''):'<tr><td colspan="7" class="empty">لا يوجد منتجات</td></tr>';
+}
+
+async function delItem(id,t){
+  const c=await Swal.fire({title:`حذف: ${t}؟`,icon:'warning',showCancelButton:true,confirmButtonText:'احذف',background:'#0a1628',color:'#fff',confirmButtonColor:'#ff4757'});
+  if(c.isConfirmed){await fetch(API+'/items/'+id,{method:'DELETE'});sw('',{icon:'success',title:'تم الحذف',timer:1200});loadItems()}
+}
+
+async function editItem(item){
+  const{value:v}=await Swal.fire({title:'تعديل المنتج',html:`<input id="s-t" class="swal2-input" value="${item.title}" placeholder="الاسم"><input id="s-v" class="swal2-input" value="${item.estimated_value}" placeholder="القيمة"><select id="s-s" class="swal2-input"><option value="active" ${item.status==='active'?'selected':''}>نشط</option><option value="completed" ${item.status==='completed'?'selected':''}>مكتمل</option></select>`,background:'#0a1628',color:'#fff',confirmButtonColor:'#00d4aa',preConfirm:()=>({...item,title:document.getElementById('s-t').value,estimated_value:document.getElementById('s-v').value,status:document.getElementById('s-s').value})});
+  if(v){await fetch(API+'/items/'+item.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});sw('',{icon:'success',title:'تم التعديل',timer:1200});loadItems()}
+}
+
+async function loadTrades(){
+  const t=await api('trades');if(!t)return;
+  document.getElementById('tradesT').innerHTML=t.length?t.map(x=>{
+    const bc=x.status==='accepted'?'b-green':x.status==='rejected'?'b-red':'b-yellow';
+    return`<tr><td>${esc(x.requester_name)||'-'}</td><td>${esc(x.offered_item_title)||'-'}</td><td>${esc(x.receiver_name)||'-'}</td><td>${esc(x.wanted_item_title)||'-'}</td>
+    <td><span class="badge ${bc}">${x.status}</span></td><td>${fmtDate(x.created_at)}</td>
+    <td><button class="btn-sm btn-del" onclick="delTrade('${x.id}')">حذف</button></td></tr>`}).join(''):'<tr><td colspan="7" class="empty">لا يوجد طلبات</td></tr>';
+}
+
+async function delTrade(id){
+  const c=await Swal.fire({title:'حذف طلب المقايضة؟',icon:'warning',showCancelButton:true,confirmButtonText:'احذف',background:'#0a1628',color:'#fff',confirmButtonColor:'#ff4757'});
+  if(c.isConfirmed){await fetch(API+'/trades/'+id,{method:'DELETE'});sw('',{icon:'success',title:'تم الحذف',timer:1200});loadTrades()}
+}
+
+async function loadMsgs(){
+  const m=await api('messages');if(!m)return;
+  document.getElementById('msgsT').innerHTML=m.length?m.map(x=>`<tr><td><strong>${esc(x.sender_name)}</strong></td><td>${esc(x.content?.substring(0,80))}</td><td>${esc(x.offered_title)||'-'}</td><td>${esc(x.wanted_title)||'-'}</td><td>${fmtDate(x.created_at)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">لا يوجد رسائل</td></tr>';
+}
+
+async function loadReviews(){
+  const r=await api('reviews');if(!r)return;
+  document.getElementById('reviewsT').innerHTML=r.length?r.map(x=>`<tr><td>${esc(x.reviewer_name)}</td><td>${esc(x.reviewee_name)}</td><td>${'⭐'.repeat(x.rating)}</td><td>${esc(x.comment)||'-'}</td><td>${fmtDate(x.created_at)}</td>
+  <td><button class="btn-sm btn-del" onclick="delReview('${x.id}')">حذف</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">لا يوجد تقييمات</td></tr>';
+}
+
+async function delReview(id){
+  const c=await Swal.fire({title:'حذف التقييم؟',icon:'warning',showCancelButton:true,confirmButtonText:'احذف',background:'#0a1628',color:'#fff',confirmButtonColor:'#ff4757'});
+  if(c.isConfirmed){await fetch(API+'/reviews/'+id,{method:'DELETE'});sw('',{icon:'success',title:'تم الحذف',timer:1200});loadReviews()}
+}
+
+async function broadcast(){
+  const title=document.getElementById('bTitle').value,body=document.getElementById('bBody').value;
+  if(!title)return sw('',{icon:'warning',title:'أدخل عنوان الإشعار'});
+  const r=await fetch(API+'/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,body})});
+  const d=await r.json();
+  sw('',{icon:'success',title:d.message||'تم الإرسال'});
+  document.getElementById('bTitle').value='';document.getElementById('bBody').value='';
+}
+</script>
 </body>
 </html>
