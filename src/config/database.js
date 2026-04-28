@@ -211,11 +211,11 @@ async function initializeDatabase() {
 
     // ── Default Categories (Expanded for high use) ───────────────────
     const catCount = await client.query('SELECT COUNT(*) as c FROM categories');
-    if (parseInt(catCount.rows[0].c) <= 8) { // If only old defaults or empty
+    if (true) { // Always sync categories to fix icons/labels
       const defaultCats = [
         ['phones',      'جوالات',       'phone-portrait-outline', '#00BFA6'],
         ['electronics', 'إلكترونيات',   'laptop-outline',         '#3B82F6'],
-        ['appliances',  'أجهزة منزلية', 'kettle-outline',         '#F59E0B'],
+        ['appliances',  'أجهزة منزلية', 'tv-outline',             '#F59E0B'],
         ['fashion',     'أزياء وملابس', 'shirt-outline',          '#6366F1'],
         ['furniture',   'أثاث وديكور',  'home-outline',           '#10B981'],
         ['cars',        'سيارات',       'car-sport-outline',      '#EF4444'],
